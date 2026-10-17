@@ -1,0 +1,41 @@
+JARINGVISUAL — VERSI LOKAL
+========================
+
+Tidak perlu memasang Node.js, menjalankan terminal, atau mengunggah data.
+
+CARA MEMBUKA
+1. Jika menerima JaringVisual-lokal.zip, ekstrak ZIP itu terlebih dahulu
+   (Windows: klik kanan > Extract All / Ekstrak Semua).
+2. Simpan JaringVisual.html di folder tetap, misalnya Dokumen/JaringVisual.
+3. Klik dua kali JaringVisual.html untuk membukanya di browser.
+   Jika yang terbuka editor teks, klik kanan > Open with / Buka dengan
+   > Google Chrome atau Microsoft Edge.
+4. Setelah halaman terbuka, klik Tambah entitas untuk menambahkan Orang
+   atau Kelompok. Klik Tambah hubungan untuk menghubungkan keduanya.
+
+Semua tampilan, kode, ikon, font, dan data contoh ada dalam satu file HTML.
+Tidak perlu koneksi internet, akun, atau server. Isi bundle HTML telah diuji
+tanpa akses jaringan memakai Chromium. Browser cloud memblokir URL file
+lokal, sehingga alur klik dua kali belum dapat diverifikasi di cloud.
+
+PENYIMPANAN
+Perubahan tersimpan di browser yang dipakai pada komputer itu.
+Gunakan browser, profil, nama file, dan lokasi file yang sama saat membuka
+kembali. Penyimpanan file lokal dapat berbeda antar browser. Mode incognito,
+pembersihan data browser, atau memindahkan file dapat membuat data tersimpan
+tidak tersedia. Jika penyimpanan ditolak browser, aplikasi menampilkan
+peringatan; gunakan Ekspor data.
+
+Cadangkan pekerjaan melalui Ekspor data secara rutin, terutama sebelum
+mengganti file dengan versi baru, memindahkan file, atau mengganti browser.
+Cadangan berupa JSON. Untuk mengembalikannya, pilih Impor JSON; isinya akan
+DITAMBAHKAN ke jaringan saat ini. Jika kamu membutuhkan jaringan kosong,
+hapus entitas contoh terlebih dahulu agar tidak bercampur.
+
+Reset contoh mengganti seluruh data browser dengan contoh awal dan meminta
+konfirmasi. Sepuluh nama orang, dua kelompok, dan semua hubungan awal adalah
+contoh fiktif.
+
+Kode proyek sumber memakai React, TypeScript, dan Vite. File HTML ini adalah
+hasil build; perubahan nama, entitas, dan hubungan yang kamu buat disimpan
+di browser, bukan ditulis kembali ke file HTML.
