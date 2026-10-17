@@ -12,8 +12,11 @@ CARA MEMBUKA
    > Google Chrome atau Microsoft Edge.
 4. Setelah halaman terbuka, klik Tambah entitas untuk menambahkan Orang
    atau Kelompok. Klik Tambah hubungan untuk menghubungkan keduanya.
+5. Klik garis hubungan atau ikon penggaris pada daftar koneksi untuk
+   mengatur panjang, ketebalan, serta jenis garis Tegas atau Putus-putus.
+   Ketebalan dan jenis berlaku per hubungan dan tersimpan otomatis.
 
-Semua tampilan, kode, ikon, font, dan data contoh ada dalam satu file HTML.
+Semua tampilan, kode, ikon, font Poppins, dan data contoh ada dalam satu file HTML.
 Tidak perlu koneksi internet, akun, atau server. Isi bundle HTML telah diuji
 tanpa akses jaringan memakai Chromium. Browser cloud memblokir URL file
 lokal, sehingga alur klik dua kali belum dapat diverifikasi di cloud.

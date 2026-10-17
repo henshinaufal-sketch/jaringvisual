@@ -37,6 +37,8 @@ Server pengembangan menggunakan port 5173. Untuk build produksi: `npm run build`
 - Tambah hubungan dengan label bebas dan arah dari entitas asal ke tujuan; hapus hubungan dari panel detail. Hubungan duplikat identik dan hubungan ke diri sendiri ditolak.
 - Peta interaktif: geser titik, geser latar, zoom, fokus seluruh hasil filter, pencarian, dan filter jenis.
 - Pengatur panjang garis: klik garis hubungan atau ikon penggaris di panel entitas. Geser slider atau gunakan tombol pendekkan/panjangkan. Entitas tujuan bergeser; garis lain yang terhubung ikut menyesuaikan. Posisi baru disimpan otomatis dan ikut diekspor ke JSON.
+- Ketebalan garis 1–8 dengan langkah 0,5, serta pilihan **Tegas** atau **Putus-putus**, dapat diatur per hubungan di panel yang sama. Pilihan tetap terlihat saat disorot, disimpan otomatis, dan ikut ekspor/impor JSON. Data versi lama tetap didukung dengan ketebalan 2 dan jenis tegas sebagai bawaan.
+- Seluruh antarmuka dan teks peta memakai Poppins; font dibundel lokal, termasuk dalam HTML offline.
 - Tema pink pastel. Data tersimpan, catatan, dan warna entitas yang pernah dikustomisasi tetap dipertahankan.
 - Direktori entitas dan detail koneksi.
 - Simpan otomatis di `localStorage` browser. Tidak ada server basis data, login, atau sinkronisasi antar perangkat. Menghapus data browser juga menghapus jaringan; ekspor JSON untuk cadangan.

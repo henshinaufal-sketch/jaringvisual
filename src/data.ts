@@ -1,5 +1,12 @@
 export type Entity = { id: string; name: string; kind: 'person' | 'group'; note: string; color: string; x: number; y: number };
-export type Relation = { id: string; source: string; target: string; label: string };
+export type Relation = {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  strokeWidth?: number;
+  lineStyle?: 'solid' | 'dashed';
+};
 export type Network = { entities: Entity[]; relations: Relation[] };
 export const STORAGE_KEY = 'jaringvisual.network.v1';
 export const colors = ['#bd4e80', '#9670b5', '#cc805d', '#628da8', '#a84d6a'];
@@ -37,6 +44,8 @@ export function isNetwork(value: unknown): value is Network {
   const relationIds = new Set<string>();
   return n.relations.every(r => {
     if (!r || typeof r.id !== 'string' || !r.id || relationIds.has(r.id) || !ids.has(r.source) || !ids.has(r.target) || r.source === r.target || typeof r.label !== 'string' || !r.label.trim() || r.label.length > 80) return false;
+    if (r.strokeWidth !== undefined && (typeof r.strokeWidth !== 'number' || !Number.isFinite(r.strokeWidth) || r.strokeWidth < 1 || r.strokeWidth > 8)) return false;
+    if (r.lineStyle !== undefined && r.lineStyle !== 'solid' && r.lineStyle !== 'dashed') return false;
     relationIds.add(r.id); return true;
   });
 }

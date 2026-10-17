@@ -153,7 +153,7 @@ test('panjang garis menggeser tujuan, memperbarui garis terkait, dan bertahan se
   await expect(panel.getByRole('heading', { name: 'Berteman', exact: true })).toBeVisible();
   await panel.getByRole('slider', { name: 'Panjang garis' }).focus();
   await page.keyboard.press('End');
-  await expect(panel.locator('output')).toHaveText('600');
+  await expect(panel.locator('.length-control output')).toHaveText('600');
   const after = await data(page);
   const source = after.entities.find((e: { id: string }) => e.id === 'p0');
   const target = after.entities.find((e: { id: string }) => e.id === 'p1');
@@ -165,13 +165,13 @@ test('panjang garis menggeser tujuan, memperbarui garis terkait, dan bertahan se
   expect(Number(await linkedEdge.getAttribute('y1'))).toBeCloseTo(target.y);
   await page.reload();
   await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
-  await expect(panel.locator('output')).toHaveText('600');
+  await expect(panel.locator('.length-control output')).toHaveText('600');
   await panel.getByRole('slider', { name: 'Panjang garis' }).focus();
   await page.keyboard.press('Home');
-  await expect(panel.locator('output')).toHaveText('80');
+  await expect(panel.locator('.length-control output')).toHaveText('80');
   await expect(panel.getByRole('button', { name: 'Perpendek garis' })).toBeDisabled();
   await panel.getByRole('button', { name: 'Perpanjang garis' }).click();
-  await expect(panel.locator('output')).toHaveText('105');
+  await expect(panel.locator('.length-control output')).toHaveText('105');
 });
 
 test('klik garis membuka kontrol tanpa menggeser peta, dan hapus menutup detail hubungan', async ({ page }) => {
@@ -179,7 +179,7 @@ test('klik garis membuka kontrol tanpa menggeser peta, dan hapus menutup detail 
   const transform = await page.locator('.network-svg > g').getAttribute('transform');
   await page.getByRole('button', { name: 'Atur panjang hubungan Andi ke Budi: Berteman', exact: true }).click();
   const panel = page.getByRole('complementary', { name: 'Detail hubungan' });
-  await expect(panel.getByRole('slider')).toBeVisible();
+  await expect(panel.getByRole('slider', { name: 'Panjang garis' })).toBeVisible();
   await expect(page.locator('.network-svg > g')).toHaveAttribute('transform', transform!);
   await panel.getByRole('button', { name: 'Perpanjang garis' }).click();
   await panel.getByRole('button', { name: 'Lihat seluruh jaringan' }).click();
@@ -213,8 +213,83 @@ test('kontrol panjang garis dapat dipakai di ponsel tanpa overflow', async ({ pa
   await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
   const panel = page.getByRole('complementary', { name: 'Detail hubungan' });
   await panel.getByRole('button', { name: 'Perpanjang garis' }).click();
-  await expect(panel.getByRole('slider')).toBeVisible();
+  await expect(panel.getByRole('slider', { name: 'Panjang garis' })).toBeVisible();
+  await panel.getByRole('slider', { name: 'Ketebalan garis' }).focus();
+  await page.keyboard.press('End');
+  await panel.getByRole('radio', { name: 'Putus-putus', exact: true }).check();
+  await expect(panel.locator('.line-appearance output')).toHaveText('8 px');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: '/tmp/jaringvisual-pink-mobile.png', fullPage: true });
+});
+
+test('ketebalan dan jenis garis bertahan saat dipilih, hover, reload, serta ekspor impor', async ({ page }) => {
+  await page.goto('/');
+  const before = await data(page);
+  await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
+  const panel = page.getByRole('complementary', { name: 'Detail hubungan' });
+  const edge = page.getByRole('button', { name: 'Atur panjang hubungan Andi ke Budi: Berteman', exact: true }).first();
+  await panel.getByRole('slider', { name: 'Ketebalan garis' }).focus();
+  await page.keyboard.press('End');
+  await panel.getByRole('radio', { name: 'Putus-putus', exact: true }).check();
+  await expect(edge.locator('.edge-line')).toHaveCSS('stroke-width', '8px');
+  await expect(edge.locator('.edge-line')).toHaveCSS('stroke-dasharray', '8px, 6px');
+  await expect(edge.locator('.edge-hit')).toHaveCSS('stroke', 'rgba(0, 0, 0, 0)');
+  await edge.hover();
+  await expect(edge.locator('.edge-line')).toHaveCSS('stroke-width', '8px');
+  await expect(edge.locator('.edge-line')).toHaveCSS('stroke-dasharray', '8px, 6px');
+  await panel.getByRole('button', { name: 'Tutup detail hubungan' }).click();
+  await page.getByRole('button', { name: 'Orang Didi', exact: true }).click();
+  await expect(edge.locator('.edge-line')).toHaveCSS('stroke-width', '8px');
+  await expect(edge.locator('.edge-line')).toHaveCSS('stroke-dasharray', '8px, 6px');
+  expect((await data(page)).entities).toEqual(before.entities);
+  expect((await data(page)).relations.filter((r: { id: string }) => r.id !== 'r0')).toEqual(before.relations.filter((r: { id: string }) => r.id !== 'r0'));
+  await page.reload();
+  await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
+  await expect(panel.getByRole('slider', { name: 'Ketebalan garis' })).toHaveValue('8');
+  await expect(panel.getByRole('radio', { name: 'Putus-putus', exact: true })).toBeChecked();
+  const downloading = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Ekspor data' }).click();
+  const file = await (await downloading).path();
+  await page.locator('input[type=file]').setInputFiles(file!);
+  const imported = await data(page);
+  expect(imported.relations.filter((r: { strokeWidth?: number; lineStyle?: string }) => r.strokeWidth === 8 && r.lineStyle === 'dashed')).toHaveLength(2);
+  await page.reload();
+  await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
+  await panel.getByRole('radio', { name: 'Tegas', exact: true }).check();
+  await panel.getByRole('slider', { name: 'Ketebalan garis' }).focus();
+  await page.keyboard.press('Home');
+  await expect(edge.locator('.edge-line')).toHaveCSS('stroke-width', '1px');
+  await expect(edge.locator('.edge-line')).toHaveCSS('stroke-dasharray', 'none');
+});
+
+test('data lama tetap valid dan impor pengaturan garis yang tidak valid ditolak', async ({ page }) => {
+  await page.goto('/');
+  const legacy = await data(page);
+  await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
+  const panel = page.getByRole('complementary', { name: 'Detail hubungan' });
+  await expect(panel.getByRole('slider', { name: 'Ketebalan garis' })).toHaveValue('2');
+  await expect(panel.getByRole('radio', { name: 'Tegas', exact: true })).toBeChecked();
+  for (const invalid of [{ strokeWidth: 0 }, { strokeWidth: 9 }, { strokeWidth: '4' }, { lineStyle: 'dotted' }]) {
+    const changed = structuredClone(legacy);
+    Object.assign(changed.relations[0], invalid);
+    await page.locator('input[type=file]').setInputFiles({ name: 'invalid-style.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(changed)) });
+    await expect(page.getByRole('status').filter({ hasText: 'Impor gagal' })).toBeVisible();
+    expect(await data(page)).toEqual(legacy);
+  }
+});
+
+test('Poppins termuat dan dipakai pada judul, kontrol, dialog, serta teks peta', async ({ page }) => {
+  await page.goto('/');
+  const faces = await page.evaluate(async () => (await document.fonts.load('400 14px Poppins')).map(f => ({ family: f.family, status: f.status })));
+  expect(faces.length).toBeGreaterThan(0);
+  expect(faces.every(f => f.family === 'Poppins' && f.status === 'loaded')).toBe(true);
+  for (const selector of ['body', '.brand', 'h1', '.stats strong', '.node-name', '.node-initials', '.search input', '.search kbd', '.primary']) {
+    await expect(page.locator(selector).first()).toHaveCSS('font-family', /^Poppins,/);
+  }
+  await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
+  await expect(page.locator('.relationship-detail h2')).toHaveCSS('font-family', /^Poppins,/);
+  await openAdd(page);
+  await expect(page.getByRole('dialog').getByRole('heading')).toHaveCSS('font-family', /^Poppins,/);
+  await expect(page.getByRole('dialog').getByLabel(/Nama entitas/)).toHaveCSS('font-family', /^Poppins,/);
 });

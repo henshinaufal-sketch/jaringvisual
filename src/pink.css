@@ -36,9 +36,9 @@ body { background: #fff7fb; }
 .selection-halo { fill: #fce5f0; stroke: #dca0bf; }
 .edge-label rect { fill: #fff7fb; stroke: #f0d7e5; }
 .edge { cursor: pointer; outline: none; }
-.edge .edge-hit { stroke: transparent; stroke-width: 18; stroke-dasharray: none; pointer-events: stroke; }
+.edge line.edge-hit { stroke: transparent; stroke-width: 18; stroke-dasharray: none; pointer-events: stroke; }
 .edge .edge-line { pointer-events: none; }
-.edge-selected .edge-line, .edge:hover .edge-line, .edge:focus-visible .edge-line { stroke: #b8437b; stroke-width: 2.5; stroke-dasharray: none; }
+.edge-selected .edge-line, .edge:hover .edge-line, .edge:focus-visible .edge-line { stroke: #b8437b; }
 .edge:focus-visible .edge-line { filter: drop-shadow(0 0 3px #bd4e8060); }
 .edge-selected .edge-label rect { fill: #fbe1ee; stroke: #dfb0ca; }
 .edge-selected .edge-label text { fill: #8c3d66; }
@@ -47,7 +47,7 @@ body { background: #fff7fb; }
 .relationship-detail { display: flex; gap: 0; }
 .relationship-symbol { width: 54px; height: 54px; display: grid; place-items: center; background: #fce4f0; color: #b8437b; border: 1px solid #f6cbe0; border-radius: 18px; margin-top: 24px; }
 .relationship-detail > .kind-badge { align-self: flex-start; margin-top: 15px; }
-.relationship-detail > h2 { font: 650 22px Manrope,sans-serif; letter-spacing: -.5px; margin: 8px 0 14px; overflow-wrap: anywhere; }
+.relationship-detail > h2 { font: 650 22px Poppins,sans-serif; letter-spacing: -.5px; margin: 8px 0 14px; overflow-wrap: anywhere; }
 .relationship-endpoints { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
 .relationship-endpoints > svg { transform: rotate(90deg); color: #c18aa5; margin-left: 4px; }
 .relationship-endpoints button { display: flex; align-items: center; gap: 8px; background: transparent; padding: 0; font-size: 11px; text-align: left; overflow-wrap: anywhere; }
@@ -60,6 +60,19 @@ body { background: #fff7fb; }
 .range-labels { display: flex; justify-content: space-between; font-size: 9px; color: #ad849b; margin-top: 2px; }
 .length-buttons { display: flex; gap: 7px; margin-top: 17px; }
 .length-buttons .button { padding: 7px 8px; min-height: 31px; font-size: 9px; gap: 4px; flex: 1; }
+.line-appearance { border-top: 1px solid #f2deea; margin-top: 22px; padding-top: 20px; }
+.line-appearance > label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 600; }
+.line-appearance output { font-size: 11px; font-variant-numeric: tabular-nums; padding: 2px 7px; border-radius: 6px; color: #9d3c6b; background: #fbe2ef; white-space: nowrap; }
+.line-appearance input[type=range] { width: 100%; margin: 17px 0 0; min-height: 24px; cursor: ew-resize; }
+.line-style-options { display: flex; gap: 8px; margin-top: 20px; }
+.line-style-options legend { margin-bottom: 10px; font-size: 11px; font-weight: 600; }
+.line-style-options label { flex: 1; min-width: 0; cursor: pointer; position: relative; }
+.line-style-options input { position: absolute; opacity: 0; }
+.line-style-options label > span { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 5px; font-size: 10px; color: #98647f; background: #fffafd; border: 1px solid #efd7e4; border-radius: 9px; }
+.line-style-options svg { height: 12px; width: 64px; max-width: 100%; }
+.line-style-options input:checked + span { color: #9d3c6b; border-color: #c16b96; background: #fce6f0; box-shadow: 0 0 0 1px #c16b9610; }
+.line-style-options input:focus-visible + span { outline: 3px solid #dba7c2; outline-offset: 3px; }
+.relationship-detail { max-height: 720px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #ebc8dc transparent; }
 .relationship-hint { font-size: 10px; line-height: 1.9; color: #a57c94; margin-top: 18px; overflow-wrap: anywhere; }
 .relationship-hint strong { font-weight: 500; color: #885671; }
 .relationship-saved { font-size: 8px; color: #ad849b; display: flex; align-items: center; gap: 6px; margin: 15px 0 23px; }
@@ -71,6 +84,7 @@ body { background: #fff7fb; }
 
 @media(max-width:720px) {
   .relationship-detail { display: flex; padding: 20px; }
+  .relationship-detail { max-height: none; overflow: visible; }
   .relationship-detail .detail-top { margin-bottom: 0; }
   .relationship-symbol { margin-top: 18px; }
   .relationship-endpoints { flex-direction: row; align-items: center; flex-wrap: wrap; }
