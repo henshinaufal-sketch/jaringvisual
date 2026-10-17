@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 export default defineConfig({
   testDir: './tests',
   testMatch: 'local-file.spec.ts',
+  outputDir: 'test-results/portable',
   fullyParallel: true,
   workers: 2,
   reporter: 'list',

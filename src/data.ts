@@ -2,7 +2,7 @@ export type Entity = { id: string; name: string; kind: 'person' | 'group'; note:
 export type Relation = { id: string; source: string; target: string; label: string };
 export type Network = { entities: Entity[]; relations: Relation[] };
 export const STORAGE_KEY = 'jaringvisual.network.v1';
-export const colors = ['#397f73', '#b98759', '#7d79a5', '#628da8', '#b77377'];
+export const colors = ['#bd4e80', '#9670b5', '#cc805d', '#628da8', '#a84d6a'];
 const people = [
   ['Andi', 350, 230], ['Budi', 535, 145], ['Cidi', 690, 255], ['Didi', 730, 425],
   ['Edi', 560, 480], ['Fredi', 365, 430], ['Gisdi', 190, 350], ['Haidi', 155, 185],

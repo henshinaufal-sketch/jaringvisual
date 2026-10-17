@@ -1,0 +1,84 @@
+:root {
+  --edge-arrow: #bb7295;
+  accent-color: #bb467e;
+}
+
+body { background: #fff7fb; }
+.sidebar { background: #ffe4f0; color: #8b3b65; border-right: 1px solid #f6cede; }
+.brand { color: #78334f; }
+.brand-light { color: #a14d76; }
+.brand sup { color: #b77596; }
+.brand-mark { color: #a73e72; background: #fff7fb; box-shadow: 0 3px 10px #ca6e9520; border-radius: 12px; }
+.workspace-label { background: #fff2f8; border-color: #f4c8dd; color: #89466c; border-radius: 12px; }
+.workspace-label small, .workspace-label > svg { color: #b37998; }
+.workspace-avatar { color: #a14d76; background: #f9d4e6; border-radius: 9px; }
+.nav-caption, .sidebar-section-heading { color: #aa728e; }
+.nav-item { color: #9b5f7c; border-radius: 10px; }
+.nav-item.active { background: #f8c5df; color: #873b65; box-shadow: 0 2px 5px #ca6e9508; }
+.nav-item:hover, .sidebar-entity:hover { background: #fbd3e6; }
+.nav-dot { background: #c05287; }
+.nav-count { background: #f7c6dc; color: #a44c76; }
+.sidebar-entity { color: #9c647f; border-radius: 8px; }
+.sidebar-entity.chosen { color: #873b65; background: #f9d0e4; }
+.sidebar-entity svg { color: #b27897; }
+.local-note { color: #a76785; }
+.local-note small { color: #b8839c; }
+.local-status { background: #d477a1; }
+.sidebar-bottom .nav-item { color: #9c647f; }
+.version { color: #b7839d; border-color: #f2c5da; }
+.primary { background: #b8437b; border-color: #b8437b; border-radius: 10px; box-shadow: 0 4px 10px #bd4e8019; }
+.primary:hover { background: #a9346c; }
+.subtle, .edit-button { border-radius: 9px; }
+.network-card { border-radius: 17px; border-color: #f0d7e5; box-shadow: 0 7px 25px #bd4e8006; }
+.canvas { background-color: #fffbfd; background-image: radial-gradient(#e9c8da .8px, transparent .8px); }
+.node-shape { filter: drop-shadow(0 3px 4px #bd4e8025); }
+.node-name { stroke: #fffbfd; }
+.selection-halo { fill: #fce5f0; stroke: #dca0bf; }
+.edge-label rect { fill: #fff7fb; stroke: #f0d7e5; }
+.edge { cursor: pointer; outline: none; }
+.edge .edge-hit { stroke: transparent; stroke-width: 18; stroke-dasharray: none; pointer-events: stroke; }
+.edge .edge-line { pointer-events: none; }
+.edge-selected .edge-line, .edge:hover .edge-line, .edge:focus-visible .edge-line { stroke: #b8437b; stroke-width: 2.5; stroke-dasharray: none; }
+.edge:focus-visible .edge-line { filter: drop-shadow(0 0 3px #bd4e8060); }
+.edge-selected .edge-label rect { fill: #fbe1ee; stroke: #dfb0ca; }
+.edge-selected .edge-label text { fill: #8c3d66; }
+.length-link { background: #fff3f9; color: #ad6a8b; padding: 5px; display: flex; border-radius: 6px; flex-shrink: 0; }
+.length-link:hover { background: #f9d3e6; color: #8f3866; }
+.relationship-detail { display: flex; gap: 0; }
+.relationship-symbol { width: 54px; height: 54px; display: grid; place-items: center; background: #fce4f0; color: #b8437b; border: 1px solid #f6cbe0; border-radius: 18px; margin-top: 24px; }
+.relationship-detail > .kind-badge { align-self: flex-start; margin-top: 15px; }
+.relationship-detail > h2 { font: 650 22px Manrope,sans-serif; letter-spacing: -.5px; margin: 8px 0 14px; overflow-wrap: anywhere; }
+.relationship-endpoints { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
+.relationship-endpoints > svg { transform: rotate(90deg); color: #c18aa5; margin-left: 4px; }
+.relationship-endpoints button { display: flex; align-items: center; gap: 8px; background: transparent; padding: 0; font-size: 11px; text-align: left; overflow-wrap: anywhere; }
+.relationship-endpoints i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.length-control { border-top: 1px solid #f2deea; padding-top: 22px; margin-top: 24px; }
+.length-control > label { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; }
+.length-control output { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; padding: 2px 7px; background: #fbe2ef; color: #9d3c6b; border-radius: 6px; }
+.length-control > p { color: #a98096; font-size: 10px; margin: 9px 0 17px; }
+.length-control input[type=range] { width: 100%; margin: 0; cursor: ew-resize; min-height: 24px; }
+.range-labels { display: flex; justify-content: space-between; font-size: 9px; color: #ad849b; margin-top: 2px; }
+.length-buttons { display: flex; gap: 7px; margin-top: 17px; }
+.length-buttons .button { padding: 7px 8px; min-height: 31px; font-size: 9px; gap: 4px; flex: 1; }
+.relationship-hint { font-size: 10px; line-height: 1.9; color: #a57c94; margin-top: 18px; overflow-wrap: anywhere; }
+.relationship-hint strong { font-weight: 500; color: #885671; }
+.relationship-saved { font-size: 8px; color: #ad849b; display: flex; align-items: center; gap: 6px; margin: 15px 0 23px; }
+.relationship-saved > span { height: 4px; width: 4px; border-radius: 50%; background: #cf83a8; }
+.toast { background: #98385f; color: #fff6fb; border-color: #bd6f98; }
+.toast > svg, .toast > button { color: #f6cae2; }
+.dialog { border-radius: 19px; }
+.dialog::backdrop { background: #59223d55; }
+
+@media(max-width:720px) {
+  .relationship-detail { display: flex; padding: 20px; }
+  .relationship-detail .detail-top { margin-bottom: 0; }
+  .relationship-symbol { margin-top: 18px; }
+  .relationship-endpoints { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .relationship-endpoints > svg { transform: none; margin-left: 0; }
+  .length-control { margin-top: 20px; padding-top: 18px; }
+  .length-buttons .button { font-size: 11px; min-height: 38px; }
+  .length-link { padding: 6px; }
+  .connection { gap: 3px; }
+  .relationship-detail .edit-button { margin-top: 15px; }
+  .relationship-detail .delete-entity { align-self: stretch; padding-top: 15px; border-top: 1px solid #f2deea; }
+}

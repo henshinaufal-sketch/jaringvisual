@@ -36,6 +36,8 @@ Server pengembangan menggunakan port 5173. Untuk build produksi: `npm run build`
 - Tambah, edit, dan hapus entitas; kustomisasi nama, jenis, catatan, dan warna.
 - Tambah hubungan dengan label bebas dan arah dari entitas asal ke tujuan; hapus hubungan dari panel detail. Hubungan duplikat identik dan hubungan ke diri sendiri ditolak.
 - Peta interaktif: geser titik, geser latar, zoom, fokus seluruh hasil filter, pencarian, dan filter jenis.
+- Pengatur panjang garis: klik garis hubungan atau ikon penggaris di panel entitas. Geser slider atau gunakan tombol pendekkan/panjangkan. Entitas tujuan bergeser; garis lain yang terhubung ikut menyesuaikan. Posisi baru disimpan otomatis dan ikut diekspor ke JSON.
+- Tema pink pastel. Data tersimpan, catatan, dan warna entitas yang pernah dikustomisasi tetap dipertahankan.
 - Direktori entitas dan detail koneksi.
 - Simpan otomatis di `localStorage` browser. Tidak ada server basis data, login, atau sinkronisasi antar perangkat. Menghapus data browser juga menghapus jaringan; ekspor JSON untuk cadangan.
 - Ekspor JSON dan impor JSON. **Impor menambahkan** jaringan dari file ke data yang ada, termasuk entitas dengan nama yang sama. ID yang bertabrakan dipetakan ulang agar koneksi tetap utuh. Reset memerlukan konfirmasi dan mengganti data saat ini dengan contoh.
@@ -50,3 +52,9 @@ npm test
 Pengujian Playwright memakai Chromium sistem di `/usr/bin/chromium` bila tersedia. Pada mesin lain, instal browser pengujian lewat `npx playwright install chromium`. Suite memeriksa data contoh, CRUD entitas, hubungan, validasi, persistensi, filter, zoom, drag, impor/ekspor, reset, serta alur pada ponsel. Tiap pengujian menggunakan penyimpanan browser terisolasi.
 
 Teknologi: React, TypeScript, Vite, SVG, dan Lucide. Tidak memerlukan database.
+
+## Vercel dan data bersama
+
+Untuk project Vercel yang terhubung ke repository ini dengan production branch `main`, push ke `main` memicu deployment otomatis jika integrasi Git aktif. Perubahan di workspace baru ikut terbit setelah di-commit dan di-push. Pastikan deployment terakhir berstatus Ready di Vercel. Build command: `npm run build`; output: `dist`.
+
+Database tidak diperlukan untuk peta pribadi yang tersimpan di satu browser. Sinkronisasi antar perangkat, akun pengguna, atau jaringan bersama memerlukan penyimpanan server/database dan pengaturan akses; fitur tersebut belum tersedia di versi ini.

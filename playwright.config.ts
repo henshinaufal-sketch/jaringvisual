@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 export default defineConfig({
   testDir: './tests',
   testMatch: 'network.spec.ts',
+  outputDir: 'test-results/web',
   fullyParallel: true,
   workers: 2,
   reporter: 'list',

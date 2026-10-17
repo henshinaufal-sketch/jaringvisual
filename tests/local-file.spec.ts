@@ -39,6 +39,14 @@ test('bundle HTML berjalan offline dan data bertahan setelah dibuka ulang', asyn
   await page.goto(appUrl(info));
   await expect(page.getByRole('button', { name: 'Orang Naufal Offline', exact: true })).toBeVisible();
   await expect(page.getByText('Tersimpan di browser ini', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
+  await page.getByRole('slider', { name: 'Panjang garis' }).focus();
+  await page.keyboard.press('End');
+  await expect(page.locator('.length-control output')).toHaveText('600');
+  await page.reload();
+  await page.getByRole('button', { name: 'Atur panjang hubungan Andi dengan Budi', exact: true }).click();
+  await expect(page.locator('.length-control output')).toHaveText('600');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 247, 251)');
   await page.screenshot({ path: '/tmp/jaringvisual-lokal.png', fullPage: true });
   expect(externalRequests).toEqual([]);
   expect(errors).toEqual([]);
