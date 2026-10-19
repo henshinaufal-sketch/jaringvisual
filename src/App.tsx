@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpFromLine, Check, ChevronDown, CircleHelp, ExternalLink, Focus, GitBranch, Layers, Link2, Minus, Network as NetworkIcon, Pencil, Plus, RotateCcw, Ruler, Search, Trash2, Users, UserRound, X } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpFromLine, Check, ChevronDown, CircleHelp, ExternalLink, Focus, GitBranch, Layers, Link2, Minus, Network as NetworkIcon, Pencil, Plus, RotateCcw, Ruler, Search, Trash2, Undo2, Users, UserRound, X } from 'lucide-react';
 import { colors, isNetwork, loadNetwork, sampleNetwork, STORAGE_KEY, type Entity, type Network, type Relation } from './data';
 import RelationDetail from './RelationDetail';
 
@@ -24,7 +24,23 @@ function ModalDialog({ children, close, title, subtitle }: { children: React.Rea
 
 export default function App() {
   const [initial] = useState(loadNetwork);
-  const [network, setNetwork] = useState<Network>(initial.network);
+  const [history, setHistory] = useState({ network: initial.network, previous: initial.previous });
+  const historyRef = useRef(history);
+  const [preview, setPreview] = useState<Network | null>(null);
+  const previewRef = useRef<Network | null>(null);
+  const network = preview ?? history.network;
+  // All committed edits replace one snapshot. No-op edits preserve the undo slot.
+  const setNetwork = (update: Network | ((n: Network) => Network)) => {
+    // An async import can finish while a pointer gesture is active.
+    // Discard its uncommitted preview before committing another edit.
+    if (drag.current) { drag.current = null; previewRef.current = null; setPreview(null); }
+    const current = historyRef.current.network;
+    const next = typeof update === 'function' ? update(current) : update;
+    if (JSON.stringify(next) === JSON.stringify(current)) return;
+    const value = { network: next, previous: current };
+    historyRef.current = value;
+    setHistory(value);
+  };
   const [selectedId, setSelectedId] = useState<string | null>(initial.network.entities[0]?.id ?? null);
   const [selectedRelationId, setSelectedRelationId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -39,7 +55,7 @@ export default function App() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
-  const drag = useRef<{ id?: string; x: number; y: number; view: View } | null>(null);
+  const drag = useRef<{ id?: string; pointerId: number; x: number; y: number; view: View } | null>(null);
   const selected = network.entities.find(e => e.id === selectedId);
   const selectedRelation = network.relations.find(r => r.id === selectedRelationId);
   const connections = network.relations.filter(r => r.source === selectedId || r.target === selectedId);
@@ -48,9 +64,9 @@ export default function App() {
   const personCount = network.entities.filter(e => e.kind === 'person').length;
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(network)); setStorageError(false); }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...history.network, undo: history.previous ? { version: 1, previous: history.previous } : undefined })); setStorageError(false); }
     catch { setStorageError(true); }
-  }, [network]);
+  }, [history]);
   useEffect(() => { setDeleteConfirm(false); }, [selectedId]);
   useEffect(() => { setFormError(''); }, [modal]);
   useEffect(() => { if (!message) return; const t = setTimeout(() => setMessage(''), 7000); return () => clearTimeout(t); }, [message]);
@@ -109,11 +125,34 @@ export default function App() {
     const matrix = svgRef.current?.getScreenCTM();
     return matrix ? new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse()) : new DOMPoint();
   };
+  const finishDrag = (e: ReactPointerEvent<SVGSVGElement>, cancel = false) => {
+    if (!drag.current || drag.current.pointerId !== e.pointerId) return;
+    const next = previewRef.current;
+    drag.current = null;
+    previewRef.current = null;
+    setPreview(null);
+    if (!cancel && next) setNetwork(next);
+  };
   const move = (e: ReactPointerEvent<SVGSVGElement>) => {
-    if (!drag.current) return;
-    const p = point(e), d = drag.current;
-    if (d.id) setNetwork(n => ({ ...n, entities: n.entities.map(entity => entity.id === d.id ? { ...entity, x: (p.x - view.x) / view.z, y: (p.y - view.y) / view.z } : entity) }));
-    else setView({ ...d.view, x: d.view.x + p.x - d.x, y: d.view.y + p.y - d.y });
+    const d = drag.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    const p = point(e);
+    if (d.id) {
+      const next = { ...historyRef.current.network, entities: historyRef.current.network.entities.map(entity => entity.id === d.id
+        ? { ...entity, x: entity.x + (p.x - d.x) / d.view.z, y: entity.y + (p.y - d.y) / d.view.z } : entity) };
+      previewRef.current = next;
+      setPreview(next);
+    } else setView({ ...d.view, x: d.view.x + p.x - d.x, y: d.view.y + p.y - d.y });
+  };
+  const undo = () => {
+    const previous = historyRef.current.previous;
+    if (!previous || drag.current) return;
+    const value = { network: previous, previous: null };
+    historyRef.current = value;
+    setHistory(value);
+    setSelectedId(null); setSelectedRelationId(null); setDeleteConfirm(false);
+    setSearch(''); setFilter('all'); setHover(null);
+    setMessage('Perubahan terakhir dibatalkan.');
   };
   const saveEntity = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -146,6 +185,7 @@ export default function App() {
     try {
       const data: unknown = JSON.parse(await file.text());
       if (!isNetwork(data)) throw new Error('invalid');
+      const network = historyRef.current.network;
       // Merge imports: keep the current network and preserve imported IDs when possible.
       const entityIds = new Map<string, string>();
       for (const entity of data.entities) entityIds.set(entity.id, network.entities.some(e => e.id === entity.id) ? crypto.randomUUID() : entity.id);
@@ -180,11 +220,11 @@ export default function App() {
       <section className="page-heading"><div><div className="eyebrow"><span /> CONNECT THE DOTS</div><h1>{page === 'network' ? 'Lihat hubungan. Temukan cerita.' : 'Orang, kelompok, dan cerita mereka.'}</h1><p>{page === 'network' ? 'Jelajahi koneksi antar orang dan kelompok dalam satu ruang visual.' : 'Kenali setiap entitas yang membentuk jaringanmu.'}</p></div><button className="button primary" onClick={() => setModal({ type: 'entity' })}><Plus size={17} />Tambah entitas</button></section>
       <section className="stats" aria-label="Ringkasan jaringan"><div><span className="stat-icon"><UserRound size={19} /></span><strong>{personCount.toString().padStart(2, '0')}</strong><span>Orang</span></div><div><span className="stat-icon warm"><Users size={19} /></span><strong>{(network.entities.length - personCount).toString().padStart(2, '0')}</strong><span>Kelompok</span></div><div><span className="stat-icon violet"><Link2 size={19} /></span><strong>{network.relations.length.toString().padStart(2, '0')}</strong><span>Hubungan</span></div><p><span className="tiny-dot" />Satu jaringan, banyak kemungkinan.</p></section>
       <section className="network-card">
-        <div className="canvas-toolbar"><div className="filter-tabs" aria-label="Filter jenis entitas">{(['all', 'person', 'group'] as const).map(f => <button key={f} className={filter === f ? 'selected' : ''} onClick={() => setFilter(f)}>{f === 'all' ? <Layers size={14} /> : f === 'person' ? <UserRound size={14} /> : <Users size={14} />}{f === 'all' ? 'Semua' : kindName(f)}</button>)}</div><div className="toolbar-right"><label className="search"><Search size={16} /><input aria-label="Cari entitas" placeholder="Cari entitas…" value={search} onChange={e => setSearch(e.target.value)} /><kbd>/</kbd></label><button className="button subtle relation-button" disabled={network.entities.length < 2} onClick={() => setModal({ type: 'relation', source: selectedId ?? undefined })}><Link2 size={15} /><span>Tambah hubungan</span></button></div></div>
+        <div className="undo-toolbar"><button className="button subtle" onClick={undo} disabled={!history.previous || preview !== null} title={history.previous ? 'Batalkan perubahan data terakhir' : 'Belum ada aksi yang bisa dibatalkan'}><Undo2 size={16} />Urungkan</button><span>{!history.previous ? 'Belum ada aksi yang bisa dibatalkan' : storageError ? 'Satu langkah · hanya tersedia di sesi ini' : 'Satu langkah · tetap tersedia setelah reload'}</span></div><div className="canvas-toolbar"><div className="filter-tabs" aria-label="Filter jenis entitas">{(['all', 'person', 'group'] as const).map(f => <button key={f} className={filter === f ? 'selected' : ''} onClick={() => setFilter(f)}>{f === 'all' ? <Layers size={14} /> : f === 'person' ? <UserRound size={14} /> : <Users size={14} />}{f === 'all' ? 'Semua' : kindName(f)}</button>)}</div><div className="toolbar-right"><label className="search"><Search size={16} /><input aria-label="Cari entitas" placeholder="Cari entitas…" value={search} onChange={e => setSearch(e.target.value)} /><kbd>/</kbd></label><button className="button subtle relation-button" disabled={network.entities.length < 2} onClick={() => setModal({ type: 'relation', source: selectedId ?? undefined })}><Link2 size={15} /><span>Tambah hubungan</span></button></div></div>
         {page === 'network' ? <div className={`network-body ${selected || selectedRelation ? 'has-detail' : ''}`}>
           <div className="canvas">
             <div className="canvas-caption"><span className="live-dot" />JARINGAN UTAMA <span className="canvas-count">{visible.length} entitas</span></div>
-            <svg ref={svgRef} className="network-svg" viewBox="0 0 900 600" aria-label="Peta jaringan hubungan interaktif" onPointerDown={e => { if (e.button !== 0) return; const p = point(e); drag.current = { x: p.x, y: p.y, view }; e.currentTarget.setPointerCapture(e.pointerId); }} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
+            <svg ref={svgRef} className="network-svg" viewBox="0 0 900 600" aria-label="Peta jaringan hubungan interaktif" onPointerDown={e => { if (e.button !== 0 || drag.current) return; const p = point(e); drag.current = { pointerId: e.pointerId, x: p.x, y: p.y, view }; e.currentTarget.setPointerCapture(e.pointerId); }} onPointerMove={move} onPointerUp={e => finishDrag(e)} onPointerCancel={e => finishDrag(e, true)} onLostPointerCapture={e => finishDrag(e, true)}>
               <defs><marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--edge-arrow)" /></marker></defs>
               <g transform={`translate(${view.x} ${view.y}) scale(${view.z})`}>
                 {network.relations.map(r => {
@@ -195,7 +235,7 @@ export default function App() {
                   const x2 = b.x - dx / distance * 33, y2 = b.y - dy / distance * 33;
                   return <g key={r.id} className={`edge ${active ? 'edge-active' : ''} ${selectedRelationId === r.id ? 'edge-selected' : ''}`} role="button" tabIndex={0} aria-label={`Atur panjang hubungan ${a.name} ke ${b.name}: ${r.label}`} onPointerDown={e => e.stopPropagation()} onClick={() => setSelectedRelationId(r.id)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedRelationId(r.id); } }}><line className="edge-hit" x1={a.x} y1={a.y} x2={b.x} y2={b.y} /><line className="edge-line" style={{ strokeWidth: r.strokeWidth ?? 2, strokeDasharray: r.lineStyle === 'dashed' ? '8 6' : 'none' }} x1={a.x} y1={a.y} x2={x2} y2={y2} markerEnd={active ? 'url(#arrow)' : undefined} /><title>{a.name} → {r.label} → {b.name}</title>{active && <g className="edge-label" transform={`translate(${(a.x + b.x) / 2} ${(a.y + b.y) / 2})`}><rect x={-r.label.length * 3.2 - 9} y="-9" width={r.label.length * 6.4 + 18} height="18" rx="5" /><text textAnchor="middle" dy="3">{r.label}</text></g>}</g>;
                 })}
-                {visible.map(entity => <g key={entity.id} className={`graph-node ${entity.id === selectedId ? 'node-selected' : ''}`} transform={`translate(${entity.x} ${entity.y})`} role="button" tabIndex={0} aria-label={`${kindName(entity.kind)} ${entity.name}`} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(entity.id); } }} onPointerDown={e => { if (e.button !== 0) return; e.stopPropagation(); select(entity.id); drag.current = { id: entity.id, x: 0, y: 0, view }; svgRef.current?.setPointerCapture(e.pointerId); }} onMouseEnter={() => setHover(entity.id)} onMouseLeave={() => setHover(null)}>
+                {visible.map(entity => <g key={entity.id} className={`graph-node ${entity.id === selectedId ? 'node-selected' : ''}`} transform={`translate(${entity.x} ${entity.y})`} role="button" tabIndex={0} aria-label={`${kindName(entity.kind)} ${entity.name}`} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(entity.id); } }} onPointerDown={e => { e.stopPropagation(); if (e.button !== 0 || drag.current) return; select(entity.id); const matrix = svgRef.current?.getScreenCTM(); if (!matrix) return; const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse()); drag.current = { id: entity.id, pointerId: e.pointerId, x: p.x, y: p.y, view }; svgRef.current?.setPointerCapture(e.pointerId); }} onMouseEnter={() => setHover(entity.id)} onMouseLeave={() => setHover(null)}>
                   {entity.id === selectedId && <circle r="39" className="selection-halo" />}
                   {entity.kind === 'person' ? <><circle r="27" fill={entity.color} className="node-shape" /><circle r="24" fill="none" stroke="white" strokeOpacity=".16" /></> : <rect x="-28" y="-25" width="56" height="50" rx="15" fill={entity.color} className="node-shape" />}
                   {entity.kind === 'person' ? <text className="node-initials" textAnchor="middle" dy="6">{initials(entity.name)}</text> : <g transform="translate(-11 -11)" color="white"><Users size={22} strokeWidth={1.6} /></g>}
@@ -218,7 +258,8 @@ export default function App() {
     {message && <div className="toast" role="status"><Check size={17} /><span>{message}</span><button aria-label="Tutup pemberitahuan" onClick={() => setMessage('')}><X size={15} /></button></div>}
     {modal?.type === 'entity' && <ModalDialog close={() => setModal(null)} title={modal.entity ? 'Edit entitas' : 'Tambahkan entitas.'} subtitle="Setiap cerita dimulai dari seseorang. Atau sekelompok orang."><form onSubmit={saveEntity}><fieldset className="kind-options"><legend>Jenis entitas</legend><label><input type="radio" name="kind" value="person" defaultChecked={(modal.entity?.kind ?? modal.kind ?? 'person') === 'person'} /><span><UserRound size={21} /><strong>Orang</strong><small>Satu individu</small></span></label><label><input type="radio" name="kind" value="group" defaultChecked={(modal.entity?.kind ?? modal.kind) === 'group'} /><span><Users size={21} /><strong>Kelompok</strong><small>Kumpulan individu</small></span></label></fieldset><label className="field">Nama entitas <span>*</span><input name="name" placeholder="Contoh: Andi atau Studio Utara" maxLength={80} required autoFocus defaultValue={modal.entity?.name} /></label><label className="field">Catatan <span className="optional">opsional</span><textarea name="note" placeholder="Ceritakan sedikit tentang entitas ini…" rows={3} maxLength={2000} defaultValue={modal.entity?.note} /></label><ColorPicker initialColor={modal.entity?.color ?? colors[0]} />{formError && <p className="form-error" role="alert">{formError}</p>}<div className="modal-footer"><button type="button" className="button subtle" onClick={() => setModal(null)}>Batal</button><button type="submit" className="button primary"><Plus size={16} />{modal.entity ? 'Simpan perubahan' : 'Tambah entitas'}</button></div></form></ModalDialog>}
     {modal?.type === 'relation' && <ModalDialog close={() => setModal(null)} title="Buat sebuah koneksi." subtitle="Hubungkan dua entitas dan beri nama hubungannya."><form onSubmit={saveRelation}><label className="field">Dari entitas<select name="source" defaultValue={modal.source ?? network.entities[0]?.id}>{network.entities.map(e => <option key={e.id} value={e.id}>{e.name} · {kindName(e.kind)}</option>)}</select></label><div className="relation-direction"><ArrowDownToLine size={17} /><span>Arah hubungan: dari → ke</span></div><label className="field">Ke entitas<select name="target" defaultValue={network.entities.find(e => e.id !== (modal.source ?? network.entities[0]?.id))?.id}>{network.entities.map(e => <option key={e.id} value={e.id}>{e.name} · {kindName(e.kind)}</option>)}</select></label><label className="field">Nama hubungan <span>*</span><input name="label" list="relation-suggestions" required maxLength={80} placeholder="Contoh: Berteman, Anggota, Pendiri…" /><datalist id="relation-suggestions">{['Berteman', 'Bersaudara', 'Berkolaborasi', 'Bekerja sama', 'Anggota', 'Pendiri'].map(l => <option key={l} value={l} />)}</datalist></label><p className="field-hint">Bebas gunakan jenis hubungan yang sesuai dengan ceritamu.</p>{formError && <p className="form-error" role="alert">{formError}</p>}<div className="modal-footer"><button type="button" className="button subtle" onClick={() => setModal(null)}>Batal</button><button type="submit" className="button primary"><Link2 size={15} />Simpan hubungan</button></div></form></ModalDialog>}
-    {modal?.type === 'help' && <ModalDialog close={() => setModal(null)} title="Kenali jaringanmu." subtitle="Panduan kecil untuk melihat gambaran yang lebih besar."><div className="help-content"><p><strong>01 · Bangun entitas</strong>Tambahkan Orang untuk individu atau Kelompok untuk komunitas, organisasi, dan kumpulan orang. Nama, catatan, dan warna bisa diubah kapan saja.</p><p><strong>02 · Hubungkan ceritanya</strong>Klik Tambah hubungan, pilih dua entitas, lalu tuliskan hubungannya. Panah menunjukkan arah dari entitas asal ke tujuan; hubungan pertemanan dapat dibaca dua arah secara makna.</p><p><strong>03 · Jelajahi peta</strong>Klik titik untuk melihat detail. Geser titik untuk mengatur posisi, geser area kosong untuk memindahkan peta, dan scroll untuk zoom. Klik garis hubungan atau ikon penggaris di daftar koneksi untuk mengatur panjang, ketebalan, dan jenis garisnya. Entitas tujuan akan bergeser dan garis lain yang terhubung ikut menyesuaikan. Gunakan tombol fokus untuk menampilkan seluruh hasil filter.</p><p><strong>04 · Simpan karyamu</strong>Perubahan disimpan otomatis di browser ini. Ekspor JSON untuk cadangan; impor menambahkan isi file ke jaringan yang ada. Data belum disinkronkan antar perangkat.</p><p className="help-note">Kesepuluh orang dan dua kelompok awal beserta semua hubungannya adalah contoh fiktif.</p></div><div className="modal-footer"><button className="button primary" onClick={() => setModal(null)}>Mengerti <Check size={16} /></button></div></ModalDialog>}
+    {modal?.type === 'help' && <ModalDialog close={() => setModal(null)} title="Kenali jaringanmu." subtitle="Panduan kecil untuk melihat gambaran yang lebih besar."><div className="help-content"><p><strong>01 · Bangun entitas</strong>Tambahkan Orang untuk individu atau Kelompok untuk komunitas, organisasi, dan kumpulan orang. Nama, catatan, dan warna bisa diubah kapan saja.</p><p><strong>02 · Hubungkan ceritanya</strong>Klik Tambah hubungan, pilih dua entitas, lalu tuliskan hubungannya. Panah menunjukkan arah dari entitas asal ke tujuan; hubungan pertemanan dapat dibaca dua arah secara makna.</p><p><strong>03 · Jelajahi peta</strong>Klik titik untuk melihat detail. Geser titik untuk mengatur posisi, geser area kosong untuk memindahkan peta, dan scroll untuk zoom. Klik garis hubungan atau ikon penggaris di daftar koneksi untuk mengatur panjang, ketebalan, dan jenis garisnya. Entitas tujuan akan bergeser dan garis lain yang terhubung ikut menyesuaikan. Gunakan tombol fokus untuk menampilkan seluruh hasil filter.</p><p><strong>04 · Simpan karyamu</strong>Perubahan disimpan otomatis di browser ini. Urungkan membatalkan satu perubahan terakhir, termasuk setelah reload; tidak ada redo. Drag yang terputus dibatalkan. Ekspor JSON untuk cadangan; impor menambahkan isi file ke jaringan yang ada. Data belum disinkronkan antar perangkat.</p><p className="help-note">Kesepuluh orang dan dua kelompok awal beserta semua hubungannya adalah contoh fiktif.</p></div><div className="modal-footer"><button className="button primary" onClick={() => setModal(null)}>Mengerti <Check size={16} /></button></div></ModalDialog>}
     {modal?.type === 'reset' && <ModalDialog close={() => setModal(null)} title="Kembali ke titik awal?" subtitle="Reset mengganti seluruh jaringan dengan 10 orang dan 2 kelompok contoh."><p className="reset-note">Perubahanmu akan dihapus dari browser ini. Ekspor data terlebih dahulu jika ingin menyimpannya.</p><div className="modal-footer"><button className="button subtle" onClick={exportData}><ArrowDownToLine size={15} />Ekspor dulu</button><button className="button subtle" onClick={() => setModal(null)}>Batal</button><button className="button primary" onClick={() => { setNetwork(sampleNetwork()); select('p0'); setSearch(''); setFilter('all'); setView({ x: 0, y: 0, z: 1 }); setModal(null); setMessage('Jaringan contoh dipulihkan.'); }}>Reset jaringan</button></div></ModalDialog>}
   </div>;
 }
+
