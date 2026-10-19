@@ -49,14 +49,21 @@ export function isNetwork(value: unknown): value is Network {
     relationIds.add(r.id); return true;
   });
 }
-export function loadNetwork(): { network: Network; warning: string } {
+export function loadNetwork(): { network: Network; previous: Network | null; warning: string } {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return { network: sampleNetwork(), warning: '' };
+    if (!saved) return { network: sampleNetwork(), previous: null, warning: '' };
     const data: unknown = JSON.parse(saved);
-    if (isNetwork(data)) return { network: data, warning: '' };
-    return { network: sampleNetwork(), warning: 'Data tersimpan tidak valid. Contoh jaringan ditampilkan; gunakan ekspor untuk mencadangkan data.' };
+    if (isNetwork(data)) {
+      const history = (data as Network & { undo?: { version?: unknown; previous?: unknown } }).undo;
+      const previous = history?.version === 1 && isNetwork(history.previous)
+        ? { entities: history.previous.entities, relations: history.previous.relations } : null;
+      return { network: { entities: data.entities, relations: data.relations }, previous,
+        warning: history && !previous ? 'Riwayat undo tidak valid; jaringan tetap dimuat.' : '' };
+    }
+    return { network: sampleNetwork(), previous: null, warning: 'Data tersimpan tidak valid. Contoh jaringan ditampilkan; gunakan ekspor untuk mencadangkan data.' };
   } catch {
-    return { network: sampleNetwork(), warning: 'Penyimpanan browser tidak tersedia. Ekspor data agar perubahanmu tetap aman.' };
+    return { network: sampleNetwork(), previous: null, warning: 'Penyimpanan browser tidak tersedia. Ekspor data agar perubahanmu tetap aman.' };
   }
 }
+

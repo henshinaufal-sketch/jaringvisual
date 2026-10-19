@@ -60,3 +60,32 @@ Teknologi: React, TypeScript, Vite, SVG, dan Lucide. Tidak memerlukan database.
 Untuk project Vercel yang terhubung ke repository ini dengan production branch `main`, push ke `main` memicu deployment otomatis jika integrasi Git aktif. Perubahan di workspace baru ikut terbit setelah di-commit dan di-push. Pastikan deployment terakhir berstatus Ready di Vercel. Build command: `npm run build`; output: `dist`.
 
 Database tidak diperlukan untuk peta pribadi yang tersimpan di satu browser. Sinkronisasi antar perangkat, akun pengguna, atau jaringan bersama memerlukan penyimpanan server/database dan pengaturan akses; fitur tersebut belum tersedia di versi ini.
+
+
+### Undo satu langkah
+
+Tombol **Urungkan** membatalkan satu perubahan data terakhir: hapus entitas
+(beserta semua hubungannya), hapus hubungan, reset, impor gabungan, perpindahan
+titik, serta tambah/edit entitas dan pengaturan hubungan. Tidak ada redo.
+Perubahan baru mengganti slot undo; aksi tanpa perubahan, seleksi, pencarian,
+pan/zoom, ekspor, dan impor gagal tidak menggantinya. Satu drag adalah satu
+transaksi saat pointer dilepas; pembatalan/kehilangan pointer capture membuang
+preview. Tombol dinonaktifkan bila tidak ada riwayat dan selama preview drag.
+
+Jaringan dan snapshot sebelumnya disimpan atomik dalam satu `setItem` pada key
+lama `jaringvisual.network.v1`. Properti `entities`/`relations` tetap di tingkat
+atas; metadata opsional `undo: { version: 1, previous: Network }` menyimpan hanya
+satu snapshot (tanpa riwayat bersarang). Data lama dimuat dengan undo kosong.
+Riwayat invalid/versi tidak dikenal dibuang, jaringan valid tetap dipakai.
+Undo juga disimpan sehingga reload tidak mengaktifkan ulang undo yang terpakai.
+Ekspor hanya berisi jaringan, tanpa metadata undo; impor tetap menggabungkan data
+serta memetakan ulang ID bentrok. Jika penyimpanan penuh/tidak tersedia, undo
+masih bekerja dalam sesi, tetapi perubahan tidak dijamin bertahan setelah reload;
+indikator penyimpanan menyarankan ekspor. Pemakaian beberapa tab tetap mengikuti
+perilaku sebelumnya: tab terakhir yang menyimpan menang.
+
+Verifikasi: `npm ci`, `npx playwright install chromium`, `npm run build`, lalu
+`npm test`. `tests/undo.spec.ts` mencakup desktop dan emulasi sentuh ponsel,
+reload sebelum/sesudah undo, data lama, riwayat rusak, penghapusan dari kedua
+jalur UI, reset, impor/ekspor, drag bertahap/batal, no-op, dan kegagalan storage.
+Build distribusi lokal dapat dibuat ulang dengan `npm run build:local`.
